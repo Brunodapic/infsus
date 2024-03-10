@@ -1,4 +1,5 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { User } from './user/entities/user.entity';
 
 const connectionOptions: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -8,10 +9,11 @@ const connectionOptions: TypeOrmModuleOptions = {
   password: 'p090y9likdL53pdzqNfQAWr30WVLpgRg',
   database: 'infsusdb',
   ssl: { rejectUnauthorized: false },
-  entities: ['dist/**/*.entity.js'],
+  entities: [User],
   migrations: ['dist/database/migrations/*.js'],
   migrationsRun: true,
-  synchronize: false,
+  synchronize: true,
+  logging: true,
 };
 
 export = connectionOptions;
