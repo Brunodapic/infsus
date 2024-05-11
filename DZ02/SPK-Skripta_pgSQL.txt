@@ -1,0 +1,161 @@
+Table KategorijaKvara {
+  ID integer [primary key]
+  Naziv varchar
+  Opis text
+}
+
+Table Kvar {
+  ID integer [primary key]
+  KategorijaID integer
+  NaruciteljID integer
+  Naslov varchar
+  Opis text
+  DatumPrijave timestamp
+  Status KvarStatusEnum
+}
+
+Table PostupakOtklanjanja {
+  ID integer [primary key]
+  KvarID integer
+  Opis text
+  DatumUnosa timestamp
+}
+
+Table Zadatak {
+  ID integer [primary key]
+  KvarID integer
+  MajstorID integer
+  AdminID integer
+  DatumPrijave timestamp
+  Opis text
+  Rok date
+  Status ZadatakStatusEnum
+}
+
+Table Korisnik {
+  ID integer [primary key]
+  Ime varchar
+  Prezime varchar
+  Email varchar
+  Lozinka varchar
+  Uloga KorisnikUlogaEnum
+  DatumKreiranja timestamp
+}
+
+Table Narucitelj {
+  KorisnikID integer [primary key]
+  DodatniPodaci text
+}
+
+Table Admin {
+  KorisnikID integer [primary key]
+  SpecijalneOvlasti text
+}
+
+Table Majstor {
+  KorisnikID integer [primary key]
+  Specijalizacija MajstorSpecijalizacijaEnum
+  Dostupnost bool
+}
+
+Ref: Kvar.KategorijaID > KategorijaKvara.ID
+Ref: PostupakOtklanjanja.KvarID > Kvar.ID
+Ref: Zadatak.KvarID > Kvar.ID
+
+
+Ref: Kvar.NaruciteljID > Korisnik.ID
+//Ref: Zadatak.MajstorID > Majstor.KorisnikID
+
+Ref: Zadatak.AdminID > Korisnik.ID
+//Ref: Zadatak.AdminID > Majstor.KorisnikID
+
+Ref: Zadatak.MajstorID > Korisnik.ID
+//Ref: Zadatak.MajstorID > Majstor.KorisnikID
+
+Ref: Narucitelj.KorisnikID > Korisnik.ID
+Ref: Admin.KorisnikID > Korisnik.ID
+Ref: Majstor.KorisnikID > Korisnik.ID
+
+Enum KvarStatusEnum {
+  Prijavljen
+  U_Analizi
+  U_Obradi
+  Ceka_se_dio
+  Zahtijeva_Dodatne_Informacije
+  Riješen
+  Zatvoren
+  Odbijen
+}
+
+Enum ZadatakStatusEnum {
+  Dodijeljen
+  U_Tijeku
+  Ceka_Odobrenje
+  Pauziran
+  Zavrsen
+  Provjerava_se
+  Zatvoren
+}
+
+Enum KorisnikUlogaEnum {
+  Narucitelj
+  Admin
+  Majstor
+}
+
+Enum MajstorSpecijalizacijaEnum {
+  Električar
+  Vodoinstalater
+  IT_Podrška
+  Strojar
+  Građevinar
+  Hladnjačar
+  Telekomunikacije
+  Automobilski_Tehničar
+}
+
+
+-- Inserting sample data into KategorijaKvara
+INSERT INTO "KategorijaKvara" ("ID", "Naziv", "Opis") VALUES
+(1, 'Električni kvar', 'Problemi s električnim instalacijama'),
+(2, 'Vodoinstalacije', 'Kvarovi na vodovodnim cijevima i pripadajućim instalacijama');
+
+-- Inserting sample data into Kvar
+INSERT INTO "Kvar" ("ID", "KategorijaID", "NaruciteljID", "Naslov", "Opis", "DatumPrijave", "Status") VALUES
+(1, 1, 1, 'Ne radi svjetlo u hodniku', 'Svjetlo u hodniku prestalo raditi, moguć problem s prekidačem.', CURRENT_TIMESTAMP, 'Prijavljen'),
+(2, 2, 2, 'Curenje vode u kuhinji', 'Iz slavine u kuhinji stalno curi voda.', CURRENT_TIMESTAMP, 'U_Analizi');
+
+-- Inserting sample data into PostupakOtklanjanja
+INSERT INTO "PostupakOtklanjanja" ("ID", "KvarID", "Opis", "DatumUnosa") VALUES
+(1, 1, 'Provjeriti električne instalacije i prekidač.', CURRENT_TIMESTAMP);
+
+-- Inserting sample data into Zadatak
+INSERT INTO "Zadatak" ("ID", "KvarID", "MajstorID", "AdminID", "DatumPrijave", "Opis", "Rok", "Status") VALUES
+(1, 1, 1, 1, CURRENT_TIMESTAMP, 'Zamjena oštećenog prekidača.', CURRENT_DATE + INTERVAL '7 days', 'Dodijeljen');
+
+-- Inserting sample data into Korisnik
+INSERT INTO "Korisnik" ("ID", "Ime", "Prezime", "Email", "Lozinka", "Uloga", "DatumKreiranja") VALUES
+(1, 'Ivan', 'Ivić', 'ivan.ivic@email.com', 'ivansPassword', 'Narucitelj', CURRENT_TIMESTAMP),
+(2, 'Ana', 'Anić', 'ana.anic@email.com', 'anasPassword', 'Admin', CURRENT_TIMESTAMP);
+
+-- Inserting sample data into Narucitelj
+INSERT INTO "Narucitelj" ("KorisnikID", "DodatniPodaci") VALUES
+(1, 'Adresa: Ivana Gorana Kovačića 5, Zagreb');
+
+-- Inserting sample data into Admin
+INSERT INTO "Admin" ("KorisnikID", "SpecijalneOvlasti") VALUES
+(2, 'Može mijenjati statuse zadataka i kvarova');
+
+-- Inserting sample data into Majstor
+INSERT INTO "Majstor" ("KorisnikID", "Specijalizacija", "Dostupnost") VALUES
+(3, 'Električar', TRUE);
+
+-- Example of adding another Majstor
+INSERT INTO "Korisnik" ("ID", "Ime", "Prezime", "Email", "Lozinka", "Uloga", "DatumKreiranja") VALUES
+(3, 'Marko', 'Markić', 'marko.maric@email.com', 'markosPassword', 'Majstor', CURRENT_TIMESTAMP);
+
+-- Adding Majstor detail for the newly added Korisnik
+INSERT INTO "Majstor" ("KorisnikID", "Specijalizacija", "Dostupnost") VALUES
+(3, 'Električar', TRUE);
+
+
