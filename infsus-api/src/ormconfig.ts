@@ -1,5 +1,6 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from './user/entities/user.entity';
+import { Breakdown } from './breakdowns/entities/breakdown.entity';
 
 const connectionOptions: TypeOrmModuleOptions = {
   type: 'postgres',
@@ -9,11 +10,11 @@ const connectionOptions: TypeOrmModuleOptions = {
   password: 'p090y9likdL53pdzqNfQAWr30WVLpgRg',
   database: 'infsusdb',
   ssl: { rejectUnauthorized: false },
-  entities: [User],
+  entities: [User, Breakdown],
   migrations: ['dist/database/migrations/*.js'],
   migrationsRun: true,
   synchronize: true,
-  logging: true,
+  logging: false,
 };
 
 export = connectionOptions;

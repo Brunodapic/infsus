@@ -3,6 +3,7 @@ import { BaseEntity } from 'src/common/entities/base-entity';
 import { IsEmail } from 'class-validator';
 import { Gender } from '../../enums/gender.enum';
 import * as bcrypt from 'bcrypt';
+import { UserRoleEnum } from '../../enums/user-role.enum';
 
 @Entity()
 export class User extends BaseEntity {
@@ -34,6 +35,14 @@ export class User extends BaseEntity {
     nullable: true,
   })
   gender: Gender;
+
+  @Column({
+    type: 'enum',
+    enum: UserRoleEnum,
+    nullable: true,
+    default: UserRoleEnum.ORDERER,
+  })
+  role: UserRoleEnum;
 
   @Column({ nullable: true })
   image: string;

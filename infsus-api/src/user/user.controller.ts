@@ -21,7 +21,6 @@ import {
 import { User } from './entities/user.entity';
 
 @ApiTags('Users')
-@Controller('user')
 @ApiOkResponse({ description: 'Success' })
 @ApiUnauthorizedResponse({ description: 'Unauthorized access' })
 @ApiNotFoundResponse({ description: 'User not found' })
