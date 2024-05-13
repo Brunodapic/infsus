@@ -1,8 +1,9 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BreakdownStatusEnum } from '../../enums/brakedown-status.enum';
 import { BaseEntity } from 'src/common/entities/base-entity';
 import { BreakdownTypeEnum } from '../../enums/breakdown-type.enum';
 import { User } from '../../user/entities/user.entity';
+import { Task } from '../../task/entities/task.entity';
 
 @Entity('breakdown')
 export class Breakdown extends BaseEntity {
@@ -32,4 +33,7 @@ export class Breakdown extends BaseEntity {
   @ManyToOne(() => User)
   @JoinColumn({ name: 'OrdererUserId' })
   OrdererUser: User;
+
+  @OneToMany(() => Task, (task) => task.breakdown)
+  tasks: Task[];
 }

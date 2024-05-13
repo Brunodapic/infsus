@@ -13,7 +13,7 @@ export class BreakdownsService {
   ) {}
 
   async create(createBreakdownDto: CreateBreakdownDto): Promise<Breakdown> {
-    const createB = await this.breakdownRepository.create(createBreakdownDto);
+    const createB = this.breakdownRepository.create(createBreakdownDto);
     return await this.breakdownRepository.save(createB);
   }
 
