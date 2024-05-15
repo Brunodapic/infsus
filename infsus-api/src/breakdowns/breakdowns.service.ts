@@ -4,6 +4,7 @@ import { UpdateBreakdownDto } from './dto/update-breakdown.dto';
 import { Breakdown } from './entities/breakdown.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { BreakdownStatusEnum } from '../enums/brakedown-status.enum';
 
 @Injectable()
 export class BreakdownsService {
@@ -48,5 +49,19 @@ export class BreakdownsService {
   async remove(id: number): Promise<boolean> {
     const removed = await this.breakdownRepository.delete(id);
     return removed.affected > 0;
+  }
+
+  async changeStatus(
+    id: number,
+    newStatus: BreakdownStatusEnum,
+  ): Promise<void> {
+    const breakdown = await this.breakdownRepository.findOne({ where: { id } });
+    if (!breakdown) {
+      throw new NotFoundException(`Breakdown with ID ${id} not found`);
+    }
+
+    breakdown.Status = newStatus;
+
+    await this.breakdownRepository.save(breakdown);
   }
 }

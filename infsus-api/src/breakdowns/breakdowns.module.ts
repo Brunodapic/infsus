@@ -8,5 +8,6 @@ import { Breakdown } from './entities/breakdown.entity';
   imports: [TypeOrmModule.forFeature([Breakdown])],
   controllers: [BreakdownsController],
   providers: [BreakdownsService],
+  exports: [BreakdownsService],
 })
 export class BreakdownsModule {}

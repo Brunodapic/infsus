@@ -33,7 +33,6 @@ export class UserController {
   @ApiBody({ type: CreateUserDto })
   async create(@Body() createUserDto: CreateUserDto): Promise<User> {
     const newUser = await this.userService.create(createUserDto);
-    console.log(newUser);
     return newUser;
   }
 

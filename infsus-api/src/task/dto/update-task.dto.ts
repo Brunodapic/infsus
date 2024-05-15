@@ -1,4 +1,10 @@
-import { PartialType } from '@nestjs/swagger';
-import { CreateTaskDto } from './create-task.dto';
+import { TaskStatusEnum } from '../../enums/task-status.enum';
+import { IsEnum, IsString } from 'class-validator';
 
-export class UpdateTaskDto extends PartialType(CreateTaskDto) {}
+export class UpdateTaskDto {
+  @IsEnum(TaskStatusEnum)
+  readonly Status: TaskStatusEnum;
+
+  @IsString()
+  readonly Opis: string;
+}
