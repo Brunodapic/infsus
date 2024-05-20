@@ -8,7 +8,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Breakdown } from './entities/breakdown.entity';
 import { CreateBreakdownDto } from './dto/create-breakdown.dto';
 import { BreakdownTypeEnum } from '../enums/breakdown-type.enum';
-import connectionOptions from '../ormconfig';
+import * as connectionOptions from '../ormconfig';
 
 describe('BreakdownsModule (integration)', () => {
   let app: INestApplication;
@@ -16,7 +16,11 @@ describe('BreakdownsModule (integration)', () => {
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [TypeOrmModule.forRoot(connectionOptions), BreakdownsModule],
+      imports: [
+        TypeOrmModule.forRoot(connectionOptions),
+        TypeOrmModule.forFeature([Breakdown]),
+        BreakdownsModule,
+      ],
     }).compile();
 
     app = module.createNestApplication();
@@ -43,10 +47,12 @@ describe('BreakdownsModule (integration)', () => {
       .send(createBreakdownDto)
       .expect(201);
 
-    const breakdown = await repository.findOne(response.body.id);
+    const breakdown = await repository.findOneBy({ id: response.body.id });
     expect(breakdown).toBeDefined();
     expect(breakdown.Naslov).toEqual(createBreakdownDto.Naslov);
     expect(breakdown.Opis).toEqual(createBreakdownDto.Opis);
+    expect(breakdown.created).toBeDefined();
+    expect(breakdown.updated).toBeDefined();
   });
 
   it('/GET breakdowns', async () => {
@@ -62,6 +68,8 @@ describe('BreakdownsModule (integration)', () => {
       Opis: 'Test Description',
       BreakdownType: BreakdownTypeEnum.Elektricni,
       OrdererUserId: 4,
+      created: new Date(),
+      updated: new Date(),
     });
 
     const response = await request(app.getHttpServer())
@@ -76,7 +84,8 @@ describe('BreakdownsModule (integration)', () => {
       Opis: 'Test Description',
       BreakdownType: BreakdownTypeEnum.Elektricni,
       OrdererUserId: 4,
-      id: 5,
+      created: new Date(),
+      updated: new Date(),
     });
 
     const updateBreakdownDto = { Naslov: 'Updated Title' };
@@ -85,9 +94,7 @@ describe('BreakdownsModule (integration)', () => {
       .send(updateBreakdownDto)
       .expect(200);
 
-    const updatedBreakdown = await repository.findOne({
-      where: { id: breakdown.id },
-    });
+    const updatedBreakdown = await repository.findOneBy({ id: breakdown.id });
     expect(updatedBreakdown.Naslov).toEqual(updateBreakdownDto.Naslov);
   });
 
@@ -97,15 +104,15 @@ describe('BreakdownsModule (integration)', () => {
       Opis: 'Test Description',
       BreakdownType: BreakdownTypeEnum.Elektricni,
       OrdererUserId: 4,
+      created: new Date(),
+      updated: new Date(),
     });
 
     await request(app.getHttpServer())
       .delete(`/breakdowns/${breakdown.id}`)
       .expect(200);
 
-    const deletedBreakdown = await repository.findOne({
-      where: { id: breakdown.id },
-    });
-    expect(deletedBreakdown).toBeUndefined();
+    const deletedBreakdown = await repository.findOneBy({ id: breakdown.id });
+    expect(deletedBreakdown).toBeNull();
   });
 });
