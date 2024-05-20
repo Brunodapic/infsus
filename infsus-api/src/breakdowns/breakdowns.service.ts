@@ -46,7 +46,12 @@ export class BreakdownsService {
     return await this.breakdownRepository.save(breakdown);
   }
 
-  async remove(id: number): Promise<boolean> {
+  async remove(id: number): Promise<boolean | NotFoundException> {
+    const breakdown = await this.breakdownRepository.findOne({ where: { id } });
+    if (!breakdown) {
+      return new NotFoundException(`Breakdown with ID ${id} not found`);
+    }
+
     const removed = await this.breakdownRepository.delete(id);
     return removed.affected > 0;
   }

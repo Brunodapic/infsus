@@ -1,6 +1,6 @@
 import { Entity, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { BreakdownStatusEnum } from '../../enums/brakedown-status.enum';
-import { BaseEntity } from 'src/common/entities/base-entity';
+import { BaseEntity } from '../../common/entities/base-entity';
 import { BreakdownTypeEnum } from '../../enums/breakdown-type.enum';
 import { User } from '../../user/entities/user.entity';
 import { Task } from '../../task/entities/task.entity';
