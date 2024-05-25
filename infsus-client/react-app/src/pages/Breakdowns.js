@@ -6,19 +6,18 @@ import { BreakdownTypeEnum } from '../models/enums/BreakdownTypeEnum';
 import { Task } from '../models/entities/Task';
 import { TaskStatusEnum } from '../models/enums/TaskStatusEnum';
 
-
-
-
 const Breakdowns = () => {
   const [breakdowns, setBreakdowns] = useState([Breakdown]);
-  const [selectedBreakdown, setSelectedBreakdown] = useState(null);
+  const [filteredBreakdowns, setFilteredBreakdowns] = useState([Breakdown]);
+  const [selectedBreakdown, setSelectedBreakdown] = useState();
   const [tasks, setTasks] = useState([Task]);
   const [openBreakdownDialog, setOpenBreakdownDialog] = useState(false);
   const [openTaskDialog, setOpenTaskDialog] = useState(false);
   const [newBreakdown, setNewBreakdown] = useState(new Breakdown('', BreakdownTypeEnum.Elektricni, '', '', '', ''));
-  const [newTask, setNewTask] = useState(new Task('', '', '', '', '', '', TaskStatusEnum.Dodijeljen, null));
-  const [editTask, setEditTask] = useState(null);
-  const [breakdownTypeForm, setBreakdownTypeForm] = useState(null)
+  const [newTask, setNewTask] = useState(new Task('', '', 6, '', '', '', TaskStatusEnum.Dodijeljen, ''));
+  const [newTask2, setNewTask2] = useState(new Task('', '', 6, '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
+  const [editingTask, setEditingTask] = useState();
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchBreakdowns();
@@ -29,27 +28,22 @@ const Breakdowns = () => {
       const response = await axios.get('/breakdowns');
       var data = [];
       var tasksForBreakdown = [];
-      //console.log(response.data)
-      for(var i = 0; i < response.data.length; i++){
-        //tasksForBreakdown = await fetchTasks(response.data[i].id) 
-        //console.log(tasksForBreakdown)
+      for (var i = 0; i < response.data.length; i++) {
         data.push(new Breakdown(
-           // id,breakdownType, naslov, opis, status, ordererUserId, ordererUser, tasks, created, updated
-            response.data[i].id,
-            response.data[i].BreakdownType,
-            response.data[i].Naslov,
-            response.data[i].Opis,
-            response.data[i].Status,
-            response.data[i].OrdererUserId,
-            null,
-            tasksForBreakdown,
-            response.data[i].created,
-            response.data[i].updated,
-          ))
+          response.data[i].id,
+          response.data[i].BreakdownType,
+          response.data[i].Naslov,
+          response.data[i].Opis,
+          response.data[i].Status,
+          response.data[i].OrdererUserId,
+          null,
+          tasksForBreakdown,
+          response.data[i].created,
+          response.data[i].updated,
+        ))
       }
-      //console.log(data)
-      setBreakdowns(data)
-      //setBreakdowns(response.data.map(breakdown => Breakdown.fromJson(breakdown)));
+      setBreakdowns(data);
+      setFilteredBreakdowns(data);
     } catch (error) {
       console.error('Error fetching breakdowns:', error);
     }
@@ -58,33 +52,27 @@ const Breakdowns = () => {
   const fetchTasks = async (byBackgroundId) => {
     try {
       const response = await axios.get(`/task/byBreakdownId/${byBackgroundId}`);
-      //console.log(response.data)
       var data = []
 
-      for(var i = 0; i < response.data.length; i++){
+      for (var i = 0; i < response.data.length; i++) {
         data.push(new Task(
-           // id, breakdownId, majstorId, adminId, opis, rok, status, breakdown, created, updated
-            response.data[i].id,
-            response.data[i].breakdownId,
-            response.data[i].MajstorID,
-            response.data[i].AdminID,
-            response.data[i].Opis,
-            response.data[i].Rok,
-            response.data[i].Status,
-            null,
-            response.data[i].updated,
-            response.data[i].created
-          ))
+          response.data[i].id,
+          response.data[i].breakdownId,
+          response.data[i].MajstorID,
+          response.data[i].AdminID,
+          response.data[i].Opis,
+          response.data[i].Rok,
+          response.data[i].Status,
+          null,
+          response.data[i].updated,
+          response.data[i].created
+        ))
       }
-      //console.log(data)
       setTasks(data);
-      //setTasks(response.data.map(task => Task.fromJson(task)));
-      //console.log(tasks)
     } catch (error) {
       console.error('Error fetching tasks:', error);
     }
   };
-
 
   const handleItemClick = (breakdown) => {
     setSelectedBreakdown(breakdown);
@@ -101,11 +89,11 @@ const Breakdowns = () => {
 
   const handleOpenTaskDialog = () => {
     setOpenTaskDialog(true);
+    setEditingTask(false);
   };
 
   const handleCloseTaskDialog = () => {
     setOpenTaskDialog(false);
-    setEditTask(null);
   };
 
   const handleBreakdownChange = (e) => {
@@ -115,9 +103,23 @@ const Breakdowns = () => {
     });
   };
 
+  const handleBreakdownUpdateChange = (e) => {
+    setSelectedBreakdown({
+      ...selectedBreakdown,
+      [e.target.name]: e.target.value,
+    });
+  };
+
   const handleTaskChange = (e) => {
     setNewTask({
       ...newTask,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleTask2Change = (e) => {
+    setNewTask2({
+      ...newTask2,
       [e.target.name]: e.target.value,
     });
   };
@@ -133,8 +135,14 @@ const Breakdowns = () => {
   };
 
   const validateTask = (task) => {
-    if (!task.naslov || task.naslov.length < 5) {
-      return "Naslov mora biti najmanje 5 znakova dug.";
+    if (!task.status || task.status.length < 5) {
+      return "Status mora biti najmanje 5 znakova dug.";
+    }
+    if (!task.rok) {
+      return "Rok mora biti definiran.";
+    }
+    if (!task.majstorId) {
+      return "Majstor Id mora biti pozitivan broj.";
     }
     if (!task.opis || task.opis.length < 10) {
       return "Opis mora biti najmanje 10 znakova dug.";
@@ -148,11 +156,10 @@ const Breakdowns = () => {
       alert(validationError);
       return;
     }
-    console.log(newBreakdown)
     try {
       const breakdownToStr = {
         "BreakdownType": newBreakdown.breakdownType.toString(),
-        "OrdererUserId": 2,
+        "OrdererUserId": 1,
         "Naslov": newBreakdown.naslov,
         "Opis": newBreakdown.opis
       }
@@ -165,20 +172,60 @@ const Breakdowns = () => {
     }
   };
 
+  const handleBreakdownUpdateSubmit = async () => {
+    const validationError = validateBreakdown(selectedBreakdown);
+    if (validationError) {
+      alert(validationError);
+      return;
+    }
+    try {
+      const breakdownToStr = {
+        "BreakdownType": selectedBreakdown.breakdownType.toString(),
+        "Status": selectedBreakdown.status,
+        "Naslov": selectedBreakdown.naslov,
+        "Opis": selectedBreakdown.opis
+      }
+      await axios.patch(`/breakdowns/${selectedBreakdown.id}`, breakdownToStr);
+      fetchBreakdowns();
+    } catch (error) {
+      console.error('Error updating breakdown:', error);
+    }
+  };
+
   const handleTaskSubmit = async () => {
-    const validationError = validateTask(newTask);
+    var validationError;
+    if (editingTask) {
+      validationError = validateTask(newTask)
+    } else {
+      validationError = validateTask(newTask2)
+    }
+
     if (validationError) {
       alert(validationError);
       return;
     }
 
     try {
-      if (editTask) {
-        await axios.put(`/breakdowns/${selectedBreakdown.id}/tasks/${editTask.id}`, newTask);
+      if (editingTask) {
+        const newTaskStr = {
+          "Opis": newTask.opis,
+          "Status": newTask.status,
+        }
+        await axios.patch(`/task/${newTask.id}`, newTaskStr);
+        setNewTask(new Task('', '', 6, '', '', '', TaskStatusEnum.Dodijeljen, null));
       } else {
-        await axios.post(`/breakdowns/${selectedBreakdown.id}/tasks`, newTask);
+        const newTaskStr = {
+          "breakdownId": selectedBreakdown.id,
+          "MajstorID": newTask2.majstorId,
+          "AdminID": 5,
+          "Opis": newTask2.opis,
+          "Rok": newTask2.rok,
+          "Status": newTask2.status,
+          "breakdown": ""
+        }
+        await axios.post(`/task`, newTaskStr);
+        setNewTask2(new Task('', '', 6, '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
       }
-      setNewTask(new Task('', '', '', '', '', '', TaskStatusEnum.Dodijeljen, null));
       handleCloseTaskDialog();
       fetchTasks(selectedBreakdown.id);
     } catch (error) {
@@ -187,79 +234,73 @@ const Breakdowns = () => {
   };
 
   const handleTaskEdit = (task) => {
-    setEditTask(task);
+    setEditingTask(true);
     setNewTask(task);
     setOpenTaskDialog(true);
   };
 
+  const handleBreakdownDelete = async () => {
+    try {
+      await axios.delete(`/breakdowns/${selectedBreakdown.id}`);
+      fetchBreakdowns();
+      setSelectedBreakdown();
+    } catch (error) {
+      console.error('Error deleting breakdown:', error);
+    }
+  };
+
   const handleTaskDelete = async (taskId) => {
     try {
-      await axios.delete(`/breakdowns/${selectedBreakdown.id}/tasks/${taskId}`);
+      await axios.delete(`/task/${taskId}`);
       fetchTasks(selectedBreakdown.id);
     } catch (error) {
       console.error('Error deleting task:', error);
     }
   };
 
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (value === '') {
+      setFilteredBreakdowns(breakdowns);
+    } else {
+      const filtered = breakdowns.filter(breakdown =>
+        breakdown.naslov.toLowerCase().includes(value.toLowerCase()) ||
+        String(breakdown.id).toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredBreakdowns(filtered);
+    }
+  };
+
   return (
     <div style={{ display: 'flex' }}>
-      <List component="nav" style={{ width: '30%' }}>
-        {breakdowns.map(breakdown => (
-          <ListItemButton key={breakdown.id} onClick={() => handleItemClick(breakdown)}>
-            {breakdown.naslov} 
-          </ListItemButton>
-        ))}
-      </List>
+      <div style={{ width: '30%' }}>
+        <TextField
+          label="Pretraži"
+          fullWidth
+          value={searchTerm}
+          onChange={handleSearchChange}
+          style={{ marginBottom: '1rem',  marginTop: '1.25rem' }}
+        />
+        <List component="nav">
+          {filteredBreakdowns.sort((a, b) => a.id - b.id).map(breakdown => (
+            <ListItemButton key={breakdown.id} onClick={() => handleItemClick(breakdown)}>
+              ID:{breakdown.id} Naslov:{breakdown.naslov}
+            </ListItemButton>
+          ))}
+        </List>
+      </div>
       <Divider orientation="vertical" flexItem />
       <div style={{ flexGrow: 1, padding: '1rem' }}>
-        {selectedBreakdown ? (
-          <>
-            <Typography variant="h5" style={{ marginBottom: '1rem' }}>{selectedBreakdown.naslov}</Typography>
-            <Typography variant="body1" style={{ marginBottom: '1rem' }}>{selectedBreakdown.opis}</Typography>
-            <Typography variant="h6" style={{ marginBottom: '1rem' }}>Zadaci</Typography>
-            <List>
-              {tasks.map(task => (
-                <ListItem key={task.id} style={{ marginBottom: '1rem' }}>
-                  <ListItemText primary={task.naslov} secondary={task.opis} />
-                  <Button variant="outlined" color="primary" onClick={() => handleTaskEdit(task)} style={{ marginRight: '0.5rem' }}>
-                    Uredi
-                  </Button>
-                  <Button variant="outlined" color="secondary" onClick={() => handleTaskDelete(task.id)}>
-                    Obriši
-                  </Button>
-                </ListItem>
-              ))}
-            </List>
-            <Button variant="contained" color="primary" onClick={handleOpenTaskDialog}>
-              Dodaj novi zadatak
-            </Button>
-            <Dialog open={openTaskDialog} onClose={handleCloseTaskDialog}>
-              <DialogTitle>{editTask ? "Uredi Zadatak" : "Novi Zadatak"}</DialogTitle>
-              <DialogContent>
-                <TextField autoFocus margin="dense" name="naslov" label="Naslov" fullWidth onChange={handleTaskChange} value={newTask.naslov || ''} />
-                <TextField  margin="dense" name="opis" label="Opis" fullWidth onChange={handleTaskChange} value={newTask.opis || ''} />
-              </DialogContent>
-              <DialogActions>
-                <Button onClick={handleCloseTaskDialog} color="primary">
-                  Odustani
-                </Button>
-                <Button onClick={handleTaskSubmit} color="primary">
-                  {editTask ? "Spremi" : "Dodaj"}
-                </Button>
-              </DialogActions>
-            </Dialog>
-          </>
-        ) : (
-          <Typography variant="h6">Odaberite kvar s liste</Typography>
-        )}
         <Button variant="contained" color="primary" onClick={handleOpenBreakdownDialog}>
           Prijavi novi kvar
         </Button>
         <Dialog open={openBreakdownDialog} onClose={handleCloseBreakdownDialog}>
           <DialogTitle>Prijava kvara</DialogTitle>
           <DialogContent>
-            <TextField autoFocus margin="dense" name="naslov" label="Naslov" fullWidth onChange={handleBreakdownChange} value={newBreakdown.naslov} />
-            <TextField size="medium" margin="dense" name="opis" label="Opis" fullWidth onChange={handleBreakdownChange} value={newBreakdown.opis} />
+            <TextField autoFocus margin="dense" name="naslov" label="Naslov" fullWidth value={newBreakdown.naslov} onChange={handleBreakdownChange} />
+            <TextField size="medium" margin="dense" name="opis" label="Opis" fullWidth value={newBreakdown.opis} onChange={handleBreakdownChange} />
             <InputLabel id="demo-simple-select-label">Tip kvara</InputLabel>
             <Select margin='dense' name="breakdownType" fullWidth labelId="demo-simple-select-label" label="Tip kvara" value={newBreakdown.breakdownType} onChange={handleBreakdownChange}>
               <MenuItem value={BreakdownTypeEnum.Elektricni}>{BreakdownTypeEnum.Elektricni.toString()}</MenuItem>
@@ -279,6 +320,86 @@ const Breakdowns = () => {
             </Button>
           </DialogActions>
         </Dialog>
+        {selectedBreakdown ? (
+          <>
+            <DialogContent>
+              <DialogTitle variant="h5" fontWeight="bold">Odabrani kvar</DialogTitle>
+              <TextField size="medium" margin="dense" name="naslov" label="Naslov kvara" fullWidth onChange={handleBreakdownUpdateChange} value={selectedBreakdown.naslov || ''} />
+              <TextField size="medium" margin="dense" name="opis" label="Opis kvar" fullWidth onChange={handleBreakdownUpdateChange} value={selectedBreakdown.opis || ''} />
+              <TextField size="medium" margin="dense" name="breakdown_id" label="ID kvara" fullWidth value={selectedBreakdown.id} />
+              <InputLabel id="demo-simple-select-label">Tip kvara</InputLabel>
+              <Select margin='dense' name="breakdownType" fullWidth labelId="demo-simple-select-label" label="Tip kvara" value={selectedBreakdown.breakdownType} onChange={handleBreakdownUpdateChange}>
+                <MenuItem value={BreakdownTypeEnum.Elektricni}>{BreakdownTypeEnum.Elektricni.toString()}</MenuItem>
+                <MenuItem value={BreakdownTypeEnum.Hidraulicni}>{BreakdownTypeEnum.Hidraulicni.toString()}</MenuItem>
+                <MenuItem value={BreakdownTypeEnum.Mehanicki}>{BreakdownTypeEnum.Mehanicki.toString()}</MenuItem>
+                <MenuItem value={BreakdownTypeEnum.Pneumatski}>{BreakdownTypeEnum.Pneumatski.toString()}</MenuItem>
+                <MenuItem value={BreakdownTypeEnum.Softverski}>{BreakdownTypeEnum.Softverski.toString()}</MenuItem>
+                <MenuItem value={BreakdownTypeEnum.Strukturalni}>{BreakdownTypeEnum.Strukturalni.toString()}</MenuItem>
+              </Select>
+              <TextField size="medium" margin="dense" name="breakdown_status" label="Status kvara" fullWidth value={selectedBreakdown.status} />
+              <TextField size="medium" margin="dense" name="breakdown_created" label="Kvar kreiran" fullWidth value={selectedBreakdown.created} />
+              <TextField size="medium" margin="dense" name="breakdown_updated" label="Kvar ažuriran" fullWidth value={selectedBreakdown.updated} />
+              <TextField size="medium" margin="dense" name="breakdown_ordererId" label="ID naručitelja" fullWidth value={selectedBreakdown.ordererUserId} />
+            </DialogContent>
+            <DialogActions>
+              <Button variant="outlined" onClick={handleBreakdownUpdateSubmit} color="primary">
+                Ažuriraj kvar
+              </Button>
+              <Button variant="outlined" color="secondary" onClick={() => handleBreakdownDelete(selectedBreakdown.id)}>
+                Obriši
+              </Button>
+            </DialogActions>
+
+            <Typography variant="h6" style={{ marginBottom: '1rem' }} fontWeight="bold">Zadaci</Typography>
+            <List>
+              {tasks.map(task => (
+                <ListItem key={task.id} style={{ marginBottom: '1rem' }}>
+                  <ListItemText primary={task.opis} secondary={task.status} />
+                  <Button variant="outlined" color="primary" onClick={() => handleTaskEdit(task)} style={{ marginRight: '0.5rem' }}>
+                    Uredi
+                  </Button>
+                  <Button variant="outlined" color="secondary" onClick={() => handleTaskDelete(task.id)}>
+                    Obriši
+                  </Button>
+                </ListItem>
+              ))}
+            </List>
+            <Button variant="contained" color="primary" onClick={handleOpenTaskDialog}>
+              Dodaj novi zadatak
+            </Button>
+            <Dialog open={openTaskDialog} onClose={handleCloseTaskDialog}>
+              <DialogTitle>{editingTask ? "Uredi Zadatak" : "Novi Zadatak"}</DialogTitle>
+              {editingTask ?
+                <DialogContent>
+                  <TextField margin="dense" name="opis" label="Opis" fullWidth onChange={handleTaskChange} value={newTask.opis || ''} />
+                  <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTaskChange} value={newTask.status || ''} />
+                  <TextField margin="dense" name="majstorid" label="ID majstora" fullWidth value={newTask.majstorId || ''} />
+                  <TextField margin="dense" name="rok" label="Rok" fullWidth value={newTask.rok || ''} />
+                  <TextField autoFocus margin="dense" name="adminid" label="ID admina" fullWidth value={newTask.adminId || ''} />
+                  <TextField autoFocus margin="dense" name="created" label="Stvoren" fullWidth value={newTask.created || ''} />
+                  <TextField autoFocus margin="dense" name="updated" label="Ažuriran" fullWidth value={newTask.updated || ''} />
+                </DialogContent>
+                :
+                <DialogContent>
+                  <TextField margin="dense" name="opis" label="Opis" fullWidth onChange={handleTask2Change} value={newTask2.opis} />
+                  <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTask2Change} value={newTask2.status || ''} />
+                  <TextField margin="dense" name="majstorid" label="ID majstora" fullWidth onChange={handleTask2Change} value={newTask2.majstorId} />
+                  <TextField margin="dense" name="rok" label="Rok" fullWidth onChange={handleTask2Change} value={newTask2.rok || ''} />
+                </DialogContent>
+              }
+              <DialogActions>
+                <Button onClick={handleCloseTaskDialog} color="primary">
+                  Odustani
+                </Button>
+                <Button onClick={handleTaskSubmit} color="primary">
+                  {editingTask ? "Spremi" : "Dodaj"}
+                </Button>
+              </DialogActions>
+            </Dialog>
+          </>
+        ) : (
+          <Typography variant="h6">Odaberite kvar s liste</Typography>
+        )}
       </div>
     </div>
   );
