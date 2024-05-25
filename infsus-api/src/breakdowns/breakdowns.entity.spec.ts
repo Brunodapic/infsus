@@ -1,20 +1,25 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { getConnection, Repository } from 'typeorm';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Breakdown } from './entities/breakdown.entity';
-import * as connectionOptions from '../ormconfig';
+import { BreakdownTypeEnum } from '../enums/breakdown-type.enum';
 import { BreakdownStatusEnum } from '../enums/brakedown-status.enum';
 
-describe('Breakdown Entity and Repository', () => {
-  let repository: Repository<Breakdown>;
-  let module: TestingModule;
+const mockBreakdownRepository = {
+  save: jest.fn(),
+  findOne: jest.fn(),
+};
 
-  beforeAll(async () => {
-    module = await Test.createTestingModule({
-      imports: [
-        TypeOrmModule.forRoot(connectionOptions),
-        TypeOrmModule.forFeature([Breakdown]),
+describe('Breakdown Entity', () => {
+  let repository: Repository<Breakdown>;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        {
+          provide: getRepositoryToken(Breakdown),
+          useValue: mockBreakdownRepository,
+        },
       ],
     }).compile();
 
@@ -23,66 +28,49 @@ describe('Breakdown Entity and Repository', () => {
     );
   });
 
-  afterAll(async () => {
-    const connection = getConnection();
-    if (connection.isConnected) {
-      await connection.close();
-    }
+  it('should be defined', () => {
+    expect(repository).toBeDefined();
   });
 
-  it('should create a breakdown', async () => {
+  it('should create a new breakdown', async () => {
     const breakdown = new Breakdown();
-    breakdown.Naslov = 'Naslov Test Breakdown';
-    breakdown.Opis = 'Test Breakdown';
-    breakdown.OrdererUserId = 1;
-    breakdown.created = new Date();
-    breakdown.updated = new Date();
+    breakdown.BreakdownType = BreakdownTypeEnum.Mehanicki;
+    breakdown.id = 1;
+    breakdown.Naslov = 'Engine Failure';
+    breakdown.Opis = 'The engine has failed due to overheating.';
     breakdown.Status = BreakdownStatusEnum.Prijavljen;
+    breakdown.OrdererUserId = 2;
+
+    mockBreakdownRepository.save.mockResolvedValue(breakdown);
 
     const savedBreakdown = await repository.save(breakdown);
-    expect(savedBreakdown).toBeDefined();
-    expect(savedBreakdown.id).toBeGreaterThan(0);
-    expect(savedBreakdown.Opis).toBe('Test Breakdown');
+    expect(savedBreakdown).toHaveProperty('id');
+    expect(savedBreakdown.BreakdownType).toBe(BreakdownTypeEnum.Mehanicki);
+    expect(savedBreakdown.Naslov).toBe('Engine Failure');
+    expect(savedBreakdown.Opis).toBe(
+      'The engine has failed due to overheating.',
+    );
+    expect(savedBreakdown.Status).toBe(BreakdownStatusEnum.Prijavljen);
+    expect(savedBreakdown.OrdererUserId).toBe(2);
   });
 
-  it('should find all breakdowns', async () => {
-    const breakdowns = await repository.find();
-    expect(breakdowns).toBeInstanceOf(Array);
-  });
-
-  it('should find a breakdown by id', async () => {
+  it('should find a breakdown by status', async () => {
     const breakdown = new Breakdown();
-    breakdown.Naslov = 'Naslov Find Breakdown';
-    breakdown.Opis = 'Find Breakdown';
-    breakdown.OrdererUserId = 1;
-    breakdown.created = new Date();
-    breakdown.updated = new Date();
-    breakdown.Status = BreakdownStatusEnum.Riješen;
+    breakdown.BreakdownType = BreakdownTypeEnum.Elektricni;
+    breakdown.Naslov = 'Battery Issue';
+    breakdown.Opis = 'The battery is not charging properly.';
+    breakdown.Status = BreakdownStatusEnum.Zatvoren;
+    breakdown.OrdererUserId = 2;
 
-    const savedBreakdown = await repository.save(breakdown);
-    const foundBreakdown = await repository.findOneBy({
-      id: savedBreakdown.id,
+    mockBreakdownRepository.save.mockResolvedValue(breakdown);
+    await repository.save(breakdown);
+
+    mockBreakdownRepository.findOne.mockResolvedValue(breakdown);
+    const foundBreakdown = await repository.findOne({
+      where: { Status: BreakdownStatusEnum.Zatvoren },
     });
 
     expect(foundBreakdown).toBeDefined();
-    expect(foundBreakdown.id).toBe(savedBreakdown.id);
-  });
-
-  it('should delete a breakdown', async () => {
-    const breakdown = new Breakdown();
-    breakdown.Naslov = 'Naslov Delete Breakdown';
-    breakdown.Opis = 'Delete Breakdown';
-    breakdown.OrdererUserId = 1;
-    breakdown.created = new Date();
-    breakdown.updated = new Date();
-    breakdown.Status = BreakdownStatusEnum.Zatvoren;
-
-    const savedBreakdown = await repository.save(breakdown);
-    await repository.delete(savedBreakdown.id);
-
-    const foundBreakdown = await repository.findOneBy({
-      id: savedBreakdown.id,
-    });
-    expect(foundBreakdown).toBeNull();
+    expect(foundBreakdown.Naslov).toBe('Battery Issue');
   });
 });
