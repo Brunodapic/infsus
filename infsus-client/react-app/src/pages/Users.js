@@ -183,7 +183,7 @@ const Users = () => {
               <TextField size="medium" margin="dense" name="firstName" label="Ime" fullWidth value={selectedUser.firstName || ''} />
               <TextField size="medium" margin="dense" name="lastName" label="Prezime" fullWidth value={selectedUser.lastName || ''} />
               <TextField size="medium" margin="dense" name="email" label="E-mail" fullWidth onChange={handleUserUpdateChange} value={selectedUser.email} />
-              <TextField size="medium" margin="dense" name="password" label="Password" fullWidth onChange={handleUserUpdateChange} value={selectedUser.password} />
+              {/* <TextField size="medium" margin="dense" name="password" label="Password" fullWidth onChange={handleUserUpdateChange} value={selectedUser.password} /> */}
             </DialogContent>
             <DialogActions>
               <Button variant="outlined" onClick={handleUserUpdateSubmit} color="primary">
