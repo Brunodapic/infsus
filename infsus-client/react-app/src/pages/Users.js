@@ -214,7 +214,7 @@ const Users = () => {
             </Dialog>
           </>
         ) : (
-          <Typography variant="h6">Odaberite majstora s liste</Typography>
+          <Typography variant="h5" fontWeight="bold">Odaberite majstora s liste</Typography>
         )}
       </div>
     </div>

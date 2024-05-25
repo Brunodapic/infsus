@@ -398,7 +398,7 @@ const Breakdowns = () => {
             </Dialog>
           </>
         ) : (
-          <Typography variant="h6">Odaberite kvar s liste</Typography>
+          <Typography variant="h5" fontWeight="bold" >Odaberite kvar s liste</Typography>
         )}
       </div>
     </div>
