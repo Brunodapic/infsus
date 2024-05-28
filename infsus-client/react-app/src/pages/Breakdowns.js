@@ -5,6 +5,10 @@ import { Breakdown } from '../models/entities/Breakdown'
 import { BreakdownTypeEnum } from '../models/enums/BreakdownTypeEnum';
 import { Task } from '../models/entities/Task';
 import { TaskStatusEnum } from '../models/enums/TaskStatusEnum';
+import { UserRoleEnum } from '../models/enums/UserRoleEnum';
+import { User } from '../models/entities/User';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const Breakdowns = () => {
   const [breakdowns, setBreakdowns] = useState([Breakdown]);
@@ -15,9 +19,11 @@ const Breakdowns = () => {
   const [openTaskDialog, setOpenTaskDialog] = useState(false);
   const [newBreakdown, setNewBreakdown] = useState(new Breakdown('', BreakdownTypeEnum.Elektricni, '', '', '', ''));
   const [newTask, setNewTask] = useState(new Task('', '', 6, '', '', '', TaskStatusEnum.Dodijeljen, ''));
-  const [newTask2, setNewTask2] = useState(new Task('', '', 6, '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
+  const [newTask2, setNewTask2] = useState(new Task('', '', '', '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
   const [editingTask, setEditingTask] = useState();
   const [searchTerm, setSearchTerm] = useState('');
+  const [users, setUsers] = useState([]);
+  const [rok, setRok] = useState(Date.now());
 
   useEffect(() => {
     fetchBreakdowns();
@@ -74,9 +80,36 @@ const Breakdowns = () => {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get('/users');
+      var data = []
+
+      for (var i = 0; i < response.data.length; i++) {
+        if (response.data[i].role === UserRoleEnum.EMPLOYEE) {
+          data.push(new User(
+            response.data[i].id,
+            response.data[i].username,
+            response.data[i].email,
+            response.data[i].password,
+            response.data[i].firstName,
+            response.data[i].lastName,
+            response.data[i].gender,
+            response.data[i].role,
+          ));
+        }
+      }
+
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
   const handleItemClick = (breakdown) => {
     setSelectedBreakdown(breakdown);
     fetchTasks(breakdown.id);
+    fetchUsers();
   };
 
   const handleOpenBreakdownDialog = () => {
@@ -118,10 +151,20 @@ const Breakdowns = () => {
   };
 
   const handleTask2Change = (e) => {
-    setNewTask2({
-      ...newTask2,
-      [e.target.name]: e.target.value,
-    });
+    // console.log("ušo sam")
+    if(e.target.name === "rok"){
+      console.log("ušo sam")
+      var rok = new Date(e.target.value);
+      setNewTask2({
+        ...newTask2,
+        [e.target.name]: rok,
+      });
+    }else{
+      setNewTask2({
+        ...newTask2,
+        [e.target.name]: e.target.value,
+      });
+    }
   };
 
   const validateBreakdown = (breakdown) => {
@@ -219,10 +262,11 @@ const Breakdowns = () => {
           "MajstorID": newTask2.majstorId,
           "AdminID": 5,
           "Opis": newTask2.opis,
-          "Rok": newTask2.rok,
+          "Rok": rok.toUTCString(),
           "Status": newTask2.status,
           "breakdown": ""
         }
+        console.log(newTaskStr)
         await axios.post(`/task`, newTaskStr);
         setNewTask2(new Task('', '', 6, '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
       }
@@ -367,24 +411,50 @@ const Breakdowns = () => {
             <Button variant="contained" color="primary" onClick={handleOpenTaskDialog}>
               Dodaj novi zadatak
             </Button>
-            <Dialog open={openTaskDialog} onClose={handleCloseTaskDialog}>
+            <Dialog fullScreen fullWidth open={openTaskDialog} onClose={handleCloseTaskDialog}>
               <DialogTitle>{editingTask ? "Uredi Zadatak" : "Novi Zadatak"}</DialogTitle>
               {editingTask ?
                 <DialogContent>
                   <TextField margin="dense" name="opis" label="Opis" fullWidth onChange={handleTaskChange} value={newTask.opis || ''} />
-                  <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTaskChange} value={newTask.status || ''} />
-                  <TextField margin="dense" name="majstorid" label="ID majstora" fullWidth value={newTask.majstorId || ''} />
+                  <InputLabel id="demo-simple-select-label2">Status zadatka</InputLabel>
+                  <Select margin='dense' name="status" fullWidth labelId="demo-simple-select-label2" label="Status zadatka" value={newTask.status} onChange={handleTaskChange}>
+                    <MenuItem value={TaskStatusEnum.Dodijeljen}>{TaskStatusEnum.Dodijeljen.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Ceka_Odobrenje}>{TaskStatusEnum.Ceka_Odobrenje.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Pauziran}>{TaskStatusEnum.Pauziran.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.U_Tijeku}>{TaskStatusEnum.U_Tijeku.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Zatvoren}>{TaskStatusEnum.Zatvoren.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Zavrsen}>{TaskStatusEnum.Zavrsen.toString()}</MenuItem>
+                  </Select>
+                  {/* <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTaskChange} value={newTask.status || ''} /> */}
+                  <TextField margin="dense" name="majstorId" label="ID majstora" fullWidth value={newTask.majstorId || ''} />
                   <TextField margin="dense" name="rok" label="Rok" fullWidth value={newTask.rok || ''} />
-                  <TextField autoFocus margin="dense" name="adminid" label="ID admina" fullWidth value={newTask.adminId || ''} />
+                  <TextField autoFocus margin="dense" name="adminId" label="ID admina" fullWidth value={newTask.adminId || ''} />
                   <TextField autoFocus margin="dense" name="created" label="Stvoren" fullWidth value={newTask.created || ''} />
                   <TextField autoFocus margin="dense" name="updated" label="Ažuriran" fullWidth value={newTask.updated || ''} />
                 </DialogContent>
                 :
                 <DialogContent>
+                  <InputLabel id="pickMajstorId">Odaberite majstora</InputLabel>
+                  <Select margin="dense" name="majstorId" fullWidth labelId="pickMajstorId" label="Majstor" value={newTask2.majstorId} onChange={handleTask2Change}>
+                    {users.map(user => (  
+                      <MenuItem value={user.id}>{user.username}</MenuItem>
+                    ))}
+                  </Select>
                   <TextField margin="dense" name="opis" label="Opis" fullWidth onChange={handleTask2Change} value={newTask2.opis} />
-                  <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTask2Change} value={newTask2.status || ''} />
-                  <TextField margin="dense" name="majstorid" label="ID majstora" fullWidth onChange={handleTask2Change} value={newTask2.majstorId} />
-                  <TextField margin="dense" name="rok" label="Rok" fullWidth onChange={handleTask2Change} value={newTask2.rok || ''} />
+                  {/* <TextField margin="dense" name="status" label="Status" fullWidth onChange={handleTask2Change} value={newTask2.status || ''} /> */}
+                  <label id="demo-simple-select-label1">Status zadatka</label>
+                  <Select margin='dense' name="status" fullWidth labelId="demo-simple-select-label1" label="Status zadatka" value={newTask2.status} onChange={handleTask2Change}>
+                    <MenuItem value={TaskStatusEnum.Dodijeljen}>{TaskStatusEnum.Dodijeljen.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Ceka_Odobrenje}>{TaskStatusEnum.Ceka_Odobrenje.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Pauziran}>{TaskStatusEnum.Pauziran.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.U_Tijeku}>{TaskStatusEnum.U_Tijeku.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Zatvoren}>{TaskStatusEnum.Zatvoren.toString()}</MenuItem>
+                    <MenuItem value={TaskStatusEnum.Zavrsen}>{TaskStatusEnum.Zavrsen.toString()}</MenuItem>
+                  </Select>
+                  <Typography variant="h7">Rok</Typography>
+                  <DatePicker scrollableMonthYearDropdown margin="dense" showIcon showPopperArrow  title="Rok" fullWidth onChange={(date) => setRok(date)} selected={rok} />
+                  {/* <DateField margin="dense" name="rok" label="Rok" fullWidth onChange={handleTask2Change} value={newTask2.rok || ''} /> */}
+                  {/* <TextField  margin="dense" name="rok" label="Rok" fullWidth onChange={handleTask2Change} value={newTask2.rok || ''}/> */}
                 </DialogContent>
               }
               <DialogActions>
