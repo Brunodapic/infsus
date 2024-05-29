@@ -201,7 +201,7 @@ const Users = () => {
               <DialogContent>
                 <TextField margin="dense" name="username" label="Korisničko ime" fullWidth onChange={handleChange} value={newUser.username} />
                 <TextField margin="dense" name="email" label="E-mail" fullWidth onChange={handleChange} value={newUser.email} />
-                <TextField margin="dense" name="password" label="Password" fullWidth onChange={handleChange} value={newUser.password} />
+                <TextField margin="dense" type="password" name="password" label="Password" fullWidth onChange={handleChange} value={newUser.password} />
               </DialogContent>
               <DialogActions>
                 <Button onClick={handleClose} color="primary">

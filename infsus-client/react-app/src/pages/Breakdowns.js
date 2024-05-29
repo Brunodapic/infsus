@@ -23,7 +23,7 @@ const Breakdowns = () => {
   const [editingTask, setEditingTask] = useState();
   const [searchTerm, setSearchTerm] = useState('');
   const [users, setUsers] = useState([]);
-  const [rok, setRok] = useState(Date.now());
+  const [rok, setRok] = useState(null);
 
   useEffect(() => {
     fetchBreakdowns();
@@ -269,6 +269,7 @@ const Breakdowns = () => {
         console.log(newTaskStr)
         await axios.post(`/task`, newTaskStr);
         setNewTask2(new Task('', '', 6, '', '', Date.now(), TaskStatusEnum.Dodijeljen, null));
+        setRok(null)
       }
       handleCloseTaskDialog();
       fetchTasks(selectedBreakdown.id);
